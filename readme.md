@@ -1,4 +1,4 @@
-# critical-critical
+# critical-cli
 critical-cli is a CLI tool for validating critical CSS on a certain website.
 
 Basically the website is loaded without stylesheets at first and compared against a version with loaded stylesheets. If the generated screenshots do not match the critical CSS on the page is considered as incorrect.
