@@ -1,7 +1,7 @@
 {
   "name": "critical-cli",
-  "version": "0.1.0",
-  "description": "CLI application for validation critical CSS on URLs",
+  "version": "0.1.1",
+  "description": "CLI application for validating critical CSS on a certain website",
   "keywords": [
     "critical",
     "cli",
