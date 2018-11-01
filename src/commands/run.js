@@ -52,8 +52,6 @@ exports.handler = (argv) => {
         cleanup();
     }
 
-    return;
-
     (async () => {
         browser = await puppeteer.launch();
 
