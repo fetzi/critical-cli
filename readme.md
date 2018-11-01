@@ -58,7 +58,7 @@ critical-cli run --config critical.json
 ## Output
 The CLI generates a screenshot of the website with its critical CSS and a screenshot with all stylesheets loaded, also a diff image is generated.
 
-| Critical version | Normal Version | Diff |
+| Critical Version | Normal Version | Diff |
 | -------- | -------- | -------- |
 | ![](examples/example.com-a.png) | ![](examples/example.com-b.png) | ![](examples/example.com-diff.png) |
 | ![](examples/jopic.at-a.png) | ![](examples/jopic.at-b.png) | ![](examples/jopic.at-diff.png) |
