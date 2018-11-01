@@ -1,4 +1,3 @@
-
 const logSymbols = require('log-symbols');
 const chalk = require('chalk');
 
@@ -12,4 +11,16 @@ exports.success = (message) => {
 
 exports.error = (message, code) => {
     process.stderr.write(logSymbols.error + ' ' + chalk.red(message) + '\n');
+}
+
+exports.promisifyStream = (stream, event) => {
+    return new Promise((resolve, reject) => {
+        stream
+            .on(event, () => {
+                resolve();
+            })
+            .on('error', (error) => {
+                reject(error);
+            });
+    });
 }

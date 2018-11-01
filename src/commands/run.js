@@ -2,7 +2,6 @@ const fs = require('fs');
 const puppeteer = require('puppeteer');
 const PNG = require('pngjs').PNG;
 const pixelmatch = require('pixelmatch');
-const stream = require('stream');
 const util = require('util');
 
 const utils = require('../utils');
@@ -10,7 +9,6 @@ const utils = require('../utils');
 let browser;
 
 let options = {};
-let filesReady = 0;
 let criticalImage, normalImage;
 
 exports.command = 'run';
@@ -36,6 +34,10 @@ exports.builder = {
     timeout: {
         default: 1000,
         describe: 'timeout for loading stylesheets',
+    },
+    cleanup: {
+        default: false,
+        describe: 'flag to cleanup output folder before run'
     }
 };
 
@@ -45,6 +47,12 @@ exports.handler = (argv) => {
     if (!fs.existsSync(options.output)) {
         fs.mkdirSync(options.output);
     }
+
+    if (options.cleanup) {
+        cleanup();
+    }
+
+    return;
 
     (async () => {
         browser = await puppeteer.launch();
@@ -73,7 +81,7 @@ async function checkPage(url) {
 
     await page.setRequestInterception(true);
     page.on('request', (request) => {
-            if (intercept && ['stylesheet'].indexOf(request.resourceType()) !== -1) {
+            if (intercept && request.resourceType() === 'stylesheet') {
                 stylesheets.push(request['_url']);
                 request.abort();
                 return;
@@ -93,17 +101,12 @@ async function checkPage(url) {
 
     await page.screenshot({path: `${options.output}/${options.filename}-b.png`});
 
+    criticalImage = fs.createReadStream(`${options.output}/${options.filename}-a.png`).pipe(new PNG());
+    normalImage = fs.createReadStream(`${options.output}/${options.filename}-b.png`).pipe(new PNG());
+
     await Promise.all([
-        new Promise((resolve, reject) => {
-            criticalImage = fs.createReadStream(`${options.output}/${options.filename}-a.png`).pipe(new PNG()).on('parsed', () => {
-                resolve();
-            });
-        }),
-        new Promise((resolve, reject) => {
-            normalImage = fs.createReadStream(`${options.output}/${options.filename}-b.png`).pipe(new PNG()).on('parsed', () => {
-                resolve();
-            });
-        })
+        utils.promisifyStream(criticalImage, 'parsed'),
+        utils.promisifyStream(normalImage, 'parsed'),
     ]);
     await compareImages();
 }
@@ -128,15 +131,19 @@ async function compareImages() {
 
     const difference = (invalidPixels * 100 / totalPixels).toFixed(2);
 
-    await new Promise((resolve, reject) => {
-        diff.pack().pipe(fs.createWriteStream(`${options.output}/${options.filename}-diff.png`)).on('finish', () => {
-            if (invalidPixels > 0) {
-                utils.error(`Critical CSS for URL ${options.currentUrl} is invalid. Difference ${difference}%`);
-                process.exit(1);
-            }
+    await utils.promisifyStream(
+        diff.pack().pipe(fs.createWriteStream(`${options.output}/${options.filename}-diff.png`)),
+        'finish'
+    );
 
-            utils.success(`Critical CSS for URL ${options.currentUrl} is valid.`);
-            resolve();
-        });
-    });
+    if (invalidPixels > 0) {
+        utils.error(`Critical CSS for URL ${options.currentUrl} is invalid. Difference ${difference}%`);
+        process.exit(1);
+    }
+
+    utils.success(`Critical CSS for URL ${options.currentUrl} is valid.`);
+}
+
+function cleanup() {
+    fs.readdirSync(options.output).forEach(file => fs.unlinkSync(`${options.output}/${file}`));
 }

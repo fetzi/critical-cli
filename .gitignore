@@ -1,2 +1,4 @@
 /node_modules
 /screenshots
+*.json
+.DS_Store
