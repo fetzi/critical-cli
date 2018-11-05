@@ -28,6 +28,8 @@ The following configuration options can be passed to the `run` command.
 | height | 768 | viewport height used for critical CSS comparison |
 | timeout | 1000 | timeout in milliseconds for loading stylesheets |
 | cleanup | false | flag to cleanup output folder before run |
+| stopOnFailure | true | flag to stop on first failure |
+| verbose | false | flag to set verbose output |
 
 **Example:**
 ```

@@ -1,15 +1,12 @@
 const fs = require('fs');
 const puppeteer = require('puppeteer');
-const PNG = require('pngjs').PNG;
-const pixelmatch = require('pixelmatch');
-const util = require('util');
+
+const Crawler = require('../classes/crawler');
+const Comparator = require('../classes/comparator');
 
 const utils = require('../utils');
 
-let browser;
-
-let options = {};
-let criticalImage, normalImage;
+let exitCode = 0;
 
 exports.command = 'run';
 exports.desc = 'run critical CSS test against url';
@@ -38,110 +35,69 @@ exports.builder = {
     cleanup: {
         default: false,
         describe: 'flag to cleanup output folder before run'
+    },
+    stopOnFailure: {
+        default: true,
+        describe: 'flag to define if execution of checks should stop after first error'
+    },
+    verbose: {
+        default: false,
+        describe: 'flag to define verbose output'
     }
 };
 
 exports.handler = (argv) => {
-    options = argv;
+    const options = argv;
 
     if (!fs.existsSync(options.output)) {
         fs.mkdirSync(options.output);
     }
 
     if (options.cleanup) {
-        cleanup();
+        cleanup(options.output);
+    }
+
+    if (options.verbose) {
+        utils.setDebug(true);
     }
 
     (async () => {
-        browser = await puppeteer.launch();
-
+        const browser = await puppeteer.launch();
         const urls = options.url;
 
-        for (url of urls) {
-            options.currentUrl = url;
-            await checkPage(url);
-        }
+        const promises = urls.map(url => {
+            const crawler = new Crawler(browser, url, options.width, options.height, options.output, options.timeout);
 
+            return crawler.run().then(async result => {
+                const diff = `${options.output}/${result.filename}-diff.png`;
+                const comparator = new Comparator(url, result.critical, result.normal, diff);
+                const comparisonResult = await comparator.compare();
+
+                if (comparisonResult.isValid) {
+                    utils.success(`${url} is valid.`);
+                } else {
+                    utils.error(`${url} is invalid.`);
+                    handleExitCode(options.stopOnFailure, comparisonResult.isValid);
+                }
+            });
+        });
+
+        await Promise.all(promises);
         await browser.close();
+
+        process.exit(exitCode);
     })();
 }
 
-async function checkPage(url) {
-    utils.info(`Checking critical CSS for ${url}`);
 
-    let stylesheets = [];
-    let intercept = true;
-
-    options.filename = encodeURIComponent(url.substring(url.indexOf('//') + 2).replace('/', '.'));
-
-    const page = await browser.newPage();
-    await page.setViewport({ width: options.width, height: options.height});
-
-    await page.setRequestInterception(true);
-    page.on('request', (request) => {
-            if (intercept && request.resourceType() === 'stylesheet') {
-                stylesheets.push(request['_url']);
-                request.abort();
-                return;
-            }
-
-            request.continue();
-        });
-
-    await page.setCacheEnabled(false);
-    await page.goto(url);
-
-    await page.screenshot({path: `${options.output}/${options.filename}-a.png`})
-    intercept = false;
-    stylesheets.forEach(stylesheet => page.addStyleTag({ url : stylesheet }));
-
-    await page.waitFor(options.timeout);
-
-    await page.screenshot({path: `${options.output}/${options.filename}-b.png`});
-
-    criticalImage = fs.createReadStream(`${options.output}/${options.filename}-a.png`).pipe(new PNG());
-    normalImage = fs.createReadStream(`${options.output}/${options.filename}-b.png`).pipe(new PNG());
-
-    await Promise.all([
-        utils.promisifyStream(criticalImage, 'parsed'),
-        utils.promisifyStream(normalImage, 'parsed'),
-    ]);
-    await compareImages();
+function cleanup(outputDirectory) {
+    fs.readdirSync(outputDirectory).forEach(file => fs.unlinkSync(`${outputDirectory}/${file}`));
 }
 
-async function compareImages() {
-    var diff = new PNG({
-        width: criticalImage.width,
-        height: criticalImage.height,
-    });
-
-    const totalPixels = options.width * options.height;
-    const invalidPixels = pixelmatch(
-        criticalImage.data,
-        normalImage.data,
-        diff.data,
-        criticalImage.width,
-        criticalImage.height,
-        {
-            threshold: 0.1,
-        }
-    );
-
-    const difference = (invalidPixels * 100 / totalPixels).toFixed(2);
-
-    await utils.promisifyStream(
-        diff.pack().pipe(fs.createWriteStream(`${options.output}/${options.filename}-diff.png`)),
-        'finish'
-    );
-
-    if (invalidPixels > 0) {
-        utils.error(`Critical CSS for URL ${options.currentUrl} is invalid. Difference ${difference}%`);
+function handleExitCode(stopOnFailure, isValid) {
+    if (stopOnFailure && !isValid) {
         process.exit(1);
     }
 
-    utils.success(`Critical CSS for URL ${options.currentUrl} is valid.`);
-}
-
-function cleanup() {
-    fs.readdirSync(options.output).forEach(file => fs.unlinkSync(`${options.output}/${file}`));
+    exitCode = Math.max(exitCode, (isValid) ? 0 : 1);
 }

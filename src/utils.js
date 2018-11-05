@@ -1,16 +1,24 @@
 const logSymbols = require('log-symbols');
 const chalk = require('chalk');
 
+let verbose = false;
+
+exports.setDebug = (debug) => {
+    verbose = debug;
+}
+
 exports.info = (message) => {
-    process.stdout.write(logSymbols.info + ' ' + chalk.blue(message) + '\n');
+    if (!verbose) return;
+
+    process.stdout.write(logSymbols.info + ' ' + message + '\n');
 }
 
 exports.success = (message) => {
     process.stdout.write(logSymbols.success + ' ' + chalk.green(message) + '\n\n');
 }
 
-exports.error = (message, code) => {
-    process.stderr.write(logSymbols.error + ' ' + chalk.red(message) + '\n');
+exports.error = (message) => {
+    process.stderr.write(logSymbols.error + ' ' + chalk.red(message) + '\n\n');
 }
 
 exports.promisifyStream = (stream, event) => {
