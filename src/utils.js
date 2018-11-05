@@ -14,11 +14,11 @@ exports.info = (message) => {
 }
 
 exports.success = (message) => {
-    process.stdout.write(logSymbols.success + ' ' + chalk.green(message) + '\n\n');
+    process.stdout.write(logSymbols.success + ' ' + chalk.green(message) + '\n');
 }
 
 exports.error = (message) => {
-    process.stderr.write(logSymbols.error + ' ' + chalk.red(message) + '\n\n');
+    process.stderr.write(logSymbols.error + ' ' + chalk.red(message) + '\n');
 }
 
 exports.promisifyStream = (stream, event) => {
