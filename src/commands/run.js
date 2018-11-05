@@ -1,8 +1,10 @@
 const fs = require('fs');
 const puppeteer = require('puppeteer');
+const { performance } = require('perf_hooks');
 
 const Crawler = require('../classes/crawler');
 const Comparator = require('../classes/comparator');
+const ReportRenderer = require('../classes/report-renderer');
 
 const utils = require('../utils');
 
@@ -19,6 +21,10 @@ exports.builder = {
     output: {
         default: './screenshots',
         describe: 'output path for page screenshots',
+    },
+    generateReport: {
+        default: true,
+        describe: 'flag to generate html report with test output'
     },
     width: {
         default: 1024,
@@ -62,8 +68,11 @@ exports.handler = (argv) => {
     }
 
     (async () => {
+        performance.mark('start');
         const browser = await puppeteer.launch();
         const urls = options.url;
+
+        const executedTests = [];
 
         const promises = urls.map(url => {
             const crawler = new Crawler(browser, url, options.width, options.height, options.output, options.timeout);
@@ -79,11 +88,22 @@ exports.handler = (argv) => {
                     utils.error(`${url} is invalid.`);
                     handleExitCode(options.stopOnFailure, comparisonResult.isValid);
                 }
+
+                executedTests.push(comparisonResult);
             });
         });
 
         await Promise.all(promises);
         await browser.close();
+
+        performance.mark('end');
+
+        performance.measure('execution-time', 'start', 'end');
+        const executionTime = (performance.getEntriesByName('execution-time')[0].duration / 1000).toFixed(1);
+
+        if (options.generateReport) {
+            (new ReportRenderer(options.output)).render(executedTests, executionTime);
+        }
 
         process.exit(exitCode);
     })();

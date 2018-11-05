@@ -46,6 +46,10 @@ module.exports = class Comparator {
         );
 
         return {
+            url: this.url,
+            criticalImage: this.critical,
+            normalImage: this.normal,
+            diffImage: this.diff,
             difference: difference,
             isValid: invalidPixels === 0,
         };

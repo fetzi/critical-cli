@@ -16,7 +16,7 @@ module.exports = class Crawler {
         let stylesheets = [];
         let intercept = true;
 
-        this.filename = encodeURIComponent(this.url.substring(this.url.indexOf('//') + 2).replace('/', '.'));
+        this.filename = this.url.substring(this.url.indexOf('//') + 2).replace(/\//g, '-');
 
         const criticalImage = `${this.outputDirectory}/${this.filename}-a.png`;
         const normalImage = `${this.outputDirectory}/${this.filename}-b.png`;

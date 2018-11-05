@@ -1,0 +1,157 @@
+<!doctype html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <title>critical-cli report</title>
+  <meta name="description" content="critical-cli test report">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      margin: 0;
+    }
+
+    .content {
+      margin: 16px;
+    }
+
+    table, th, td {
+      border: 1px solid #E0E0E0;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 10px;
+    }
+
+    th {
+      background-color: #EEEEEE;
+    }
+
+    .text-center {
+      text-align: center;
+    }
+
+    .image-cell img {
+      max-width: 200px;
+      height: auto;
+      border: 1px solid #E0E0E0;
+    }
+
+    .icon--success {
+      fill: #43A047;
+    }
+
+    .icon--error {
+      fill: #E53935;
+    }
+
+    .lightbox {
+      position: fixed;
+      top: 0;
+      height: 100vh;
+      width: 100%;
+      padding: 0;
+
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: #ffffff;
+    }
+
+    .close {
+      font-size: 32px;
+      font-weight: bold;
+      cursor: pointer;
+
+      position: absolute;
+      top: 20px;
+      right: 20px;
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="content">
+  <h1>critical-cli Report</h1>
+
+  <p>
+    critical-cli tested {{urlCount}} URL's in {{executionTime}} seconds.
+  </p>
+
+  <table>
+    <tr>
+      <th>URL</th>
+      <th>Difference [%]</th>
+      <th>Status</th>
+      <th>Critical Snapshot</th>
+      <th>Normal Snapshot</th>
+      <th>Diff Snapshot</th>
+    </tr>
+
+    {{#each tests}}
+      <tr>
+        <td>{{url}}</td>
+        <td class="text-center">{{difference}}</td>
+        <td class="text-center">
+          {{#if isValid}}
+            <svg class="icon--success" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"/></svg>
+          {{else}}
+            <svg class="icon--error" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M24 20.188l-8.315-8.209 8.2-8.282-3.697-3.697-8.212 8.318-8.31-8.203-3.666 3.666 8.321 8.24-8.206 8.313 3.666 3.666 8.237-8.318 8.285 8.203z"/></svg>
+          {{/if}}
+        </td>
+        <td class="image-cell">
+          <a href="#" class="lightbox-image"><img src="{{criticalImage}}" alt="critical image" /></a>
+        </td>
+        <td class="image-cell">
+          <a href="#" class="lightbox-image"><img src="{{normalImage}}" alt="normal image" /></a>
+        </td>
+        <td class="image-cell">
+          <a href="#" class="lightbox-image"><img src="{{diffImage}}" alt="diff image" /></a>
+        </td>
+      </tr>
+    {{/each}}
+  </table>
+
+  </div>
+
+  <div class="lightbox hidden">
+    <span class="close">X</span>
+    <img src=""/>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      var images = document.querySelectorAll('.lightbox-image');
+
+      [].forEach.call(images, function(image) {
+        image.addEventListener('click', function (event) {
+          var target = event.target;
+
+          document.querySelector('.lightbox img').src = target.src;
+          document.querySelector('.lightbox').classList.remove('hidden');
+        });
+      });
+
+      document.addEventListener('keydown', function(event) {
+        event = event || window.event;
+        if (event.keyCode == 27) {
+            document.querySelector('.lightbox').classList.add('hidden');
+        }
+      })
+
+      document.querySelector('.close').addEventListener('click', function() {
+        document.querySelector('.lightbox').classList.add('hidden');
+      });
+    });
+  </script>
+</body>
+
+</html>

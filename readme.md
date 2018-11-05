@@ -23,7 +23,8 @@ The following configuration options can be passed to the `run` command.
 | Option | Default | Description |
 | -------- | -------- | -------- |
 | url | N/A | the URL(s) to check |
-| output | `./screenshots` | output path for page screenshots |
+| output | `./reports` | output path for page screenshots |
+| generateReport | true | flag to generate html report with test output |
 | width | 1024 | viewport width used for critical CSS comparison |
 | height | 768 | viewport height used for critical CSS comparison |
 | timeout | 1000 | timeout in milliseconds for loading stylesheets |
@@ -66,6 +67,11 @@ The CLI generates a screenshot of the website with its critical CSS and a screen
 | ![](examples/jopic.at-a.png) | ![](examples/jopic.at-b.png) | ![](examples/jopic.at-diff.png) |
 
 This makes it easy to determine the problems with your critical CSS.
+
+## Report
+To be able to review the output in an easy way the CLI by default generates an HTML report containing information about the last test results.
+
+![](examples/report.png)
 
 ## License
 The MIT License (MIT). Please see the [License File](LICENSE) for more information.
